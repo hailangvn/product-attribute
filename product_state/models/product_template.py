@@ -35,7 +35,7 @@ class ProductTemplate(models.Model):
 
     @api.model
     def _get_default_product_state_id(self):
-        return self.env["product.state"].search([("default", "=", True)], limit=1).id
+        return self.env["product.state"].search([("default", "=", True)], limit=1)
 
     @api.depends("product_state_id")
     def _compute_product_state(self):
@@ -43,14 +43,18 @@ class ProductTemplate(models.Model):
             product_tmpl.state = product_tmpl.product_state_id.code
 
     def _inverse_product_state(self):
-        ProductState = self.env["product.state"]
         for product_tmpl in self:
-            product_state = ProductState.search(
-                [("code", "=", product_tmpl.state)], limit=1
+            self._set_product_state_id(product_tmpl)
+
+    def _set_product_state_id(self, record):
+        """ The record param is for similar state field at product.product model. """
+        ProductState = record.env["product.state"]
+        product_state = ProductState.search([("code", "=", record.state)], limit=1)
+        if record.state and not product_state:
+            product_state = ProductState.create(
+                {"name": record.state, "code": record.state}
             )
-            if product_tmpl.state and not product_state:
-                product_state = ProductState.create({"name": product_tmpl.state})
-            product_tmpl.product_state_id = product_state.id
+        record.product_state_id = product_state.id
 
     @api.model
     def _read_group_state_id(self, states, domain, order):
