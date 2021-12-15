@@ -2,7 +2,7 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl.html).
 import logging
 
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError, ValidationError
 from odoo.tests.common import SavepointCase
 
 _logger = logging.getLogger(__name__)
@@ -83,7 +83,7 @@ class TestProductState(SavepointCase):
             wn_expect = cm.exception.args[0]
             self.assertEqual("There should be only one default state", wn_expect)
 
-    def test_04_new_state(self):
+    def test_04_invalid_state(self):
         self._create_product()
-        self.product.state = "new_code"
-        self.assertEqual(self.product.product_state_id.code, "new_code")
+        with self.assertRaises(UserError):
+            self.product.state = "new_code"
